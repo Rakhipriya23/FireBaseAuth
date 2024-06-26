@@ -34,6 +34,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.firebaseauth.ui.theme.FireBaseAuthTheme
 import com.example.firebaseauth.ui.theme.LoginScreen
 import com.example.firebaseauth.ui.theme.SignUpScreen
+import com.google.firebase.Firebase
 import com.google.firebase.FirebaseException
 import com.google.firebase.FirebaseTooManyRequestsException
 import com.google.firebase.auth.FirebaseAuth
@@ -43,7 +44,7 @@ import com.google.firebase.auth.PhoneAuthCredential
 import com.google.firebase.auth.PhoneAuthOptions
 import com.google.firebase.auth.PhoneAuthProvider
 import java.util.concurrent.TimeUnit
-
+import com.google.firebase.firestore.firestore
 class MainActivity : ComponentActivity() {
 //    private val auth = FirebaseAuth.getInstance()
 //    var storedVerificationId: String?=null
@@ -73,6 +74,7 @@ class MainActivity : ComponentActivity() {
         }
     }
     private val auth = FirebaseAuth.getInstance()
+    //val firebaseDB = Firebase.firestore
     var storedVerificationId: String? = null
     lateinit var resendToken: PhoneAuthProvider.ForceResendingToken
 
@@ -97,7 +99,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
     }
-    val callbacks = object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
+     val callbacks = object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
 
         override fun onVerificationCompleted(credential: PhoneAuthCredential) {
             // This callback will be invoked in two situations:
@@ -136,11 +138,11 @@ class MainActivity : ComponentActivity() {
             Log.d(TAG, "onCodeSent:$verificationId")
 
             // Save verification ID and resending token so we can use them later
-            var storedVerificationId = verificationId
-            var resendToken = token
+             storedVerificationId = verificationId
+             resendToken = token
         }
     }
-    fun startPhoneNumberVerification(phoneNumber: String) {
+     fun startPhoneNumberVerification(phoneNumber: String) {
         val options = PhoneAuthOptions.newBuilder(auth)
             .setPhoneNumber(phoneNumber) // Phone number to verify
             .setTimeout(60L, TimeUnit.SECONDS) // Timeout and unit
@@ -149,7 +151,7 @@ class MainActivity : ComponentActivity() {
             .build()
         PhoneAuthProvider.verifyPhoneNumber(options)
     }
-    fun verifyPhoneWithCode(code: String) {
+     fun verifyPhoneWithCode(code: String) {
         val credential = PhoneAuthProvider.getCredential(storedVerificationId!!, code)
         signINWithPhoneCred(credential)
 

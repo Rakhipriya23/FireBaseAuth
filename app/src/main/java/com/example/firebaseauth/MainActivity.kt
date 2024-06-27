@@ -5,11 +5,16 @@ package com.example.firebaseauth
 
 
 import android.content.ContentValues.TAG
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Column
@@ -24,7 +29,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Divider
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -34,28 +38,26 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
+import coil.compose.rememberAsyncImagePainter
 import com.example.firebaseauth.ui.theme.FireBaseAuthTheme
-import com.example.firebaseauth.ui.theme.LoginScreen
-import com.example.firebaseauth.ui.theme.SignUpScreen
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseException
 import com.google.firebase.FirebaseTooManyRequestsException
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthMissingActivityForRecaptchaException
-import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.PhoneAuthCredential
 import com.google.firebase.auth.PhoneAuthOptions
 import com.google.firebase.auth.PhoneAuthProvider
 import java.util.concurrent.TimeUnit
 import com.google.firebase.firestore.firestore
-import com.google.firebase.auth.auth
+import com.google.firebase.storage.storage
+import java.util.UUID
+
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -67,10 +69,11 @@ class MainActivity : ComponentActivity() {
 //            }
 
             FireBaseAuthTheme {
-                fetchUserDisplay()
+                //fetchUserDisplay()
+                ImageUploadScreen()
             }
 
-            AddUserScreen()
+           // AddUserScreen()
 
 //            val navController = rememberNavController()
 //            NavHost(navController = navController, startDestination = "signup") {
@@ -148,6 +151,48 @@ class MainActivity : ComponentActivity() {
                 Log.w(TAG, "Error Getting Data", e)
             }
     }
+
+//upload image
+
+    val storage= Firebase.storage
+    val storageRef = storage.reference
+    fun uploadImage(uri: Uri, context: android.content.Context) {
+        val fileName = "images/${UUID.randomUUID()}.jpg"
+        val imageRef = storageRef.child(fileName)
+
+        imageRef.putFile(uri)
+            .addOnCompleteListener { takeSnapShot ->
+                imageRef.downloadUrl.addOnSuccessListener { uri ->
+                    Toast.makeText(
+                        context,"Image uploaded successfully:${uri}",Toast.LENGTH_SHORT).show()
+
+
+
+                }
+
+            }
+            .addOnFailureListener { exception ->
+                Toast.makeText(
+                    context,
+                    "Image upload Failed:${exception.message}",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 //..........................................................................
@@ -415,6 +460,31 @@ class MainActivity : ComponentActivity() {
                     Divider()
                 }
             }
+        }
+    }
+
+
+
+    @Composable
+    fun ImageUploadScreen() {
+        val context = LocalContext.current
+        val imageUri = remember {
+            mutableStateOf<Uri?>(null)
+        }
+        val launcher= rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) {
+                uri: Uri?->imageUri.value=uri
+            uri.let { uploadImage(it!!,context) }
+
+        }
+        Column(modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally) {
+            Button(onClick = {launcher.launch("image/*") }) {
+                Text(text = "Select Image")
+            }
+            Spacer(modifier = Modifier.height(20.dp))
+            imageUri.value.let {uri-> Image(painter = rememberAsyncImagePainter(uri), contentDescription = "Upload Image",
+                modifier = Modifier.size(250.dp)) }
         }
     }
 
